@@ -13,30 +13,6 @@ IDENT="goldman-sachs-elevator"
 REALNAME="pureevil"
 INI="gsbot.ini"
 NAME_TO_BOT="GSElevator"
-"""
-readbuffer=""
-
-s=socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-s.connect((HOST, PORT))
-s.send("NICK %s\r\n" % NICK)
-s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
-s.send("JOIN #poker \r\n")
-s.send("PRIVMSG #poker :sup donks.  i am the 1% \r\n")
-s.send("PART #poker \r\n")
-s.close()
-sys.exit()
-while 1:
-    readbuffer=readbuffer+s.recv(1024)
-    temp=string.split(readbuffer, "\n")
-    readbuffer=temp.pop( )
-
-    for line in temp:
-        line=string.rstrip(line)
-        line=string.split(line)
-        print line
-        if(line[0]=="PING"):
-            s.send("PONG %s\r\n" % line[1])
-"""
 class Bot(object):
     
     def __init__(self,
@@ -107,7 +83,6 @@ def parse_ini(ini):
         value = tokens[-1]
         param_super_name = tokens[0]
         param_tree = param_super_name.split('.')
-        print param_tree
         try:
             params[ param_tree[0] ][ param_tree[1] ] = value
         except KeyError:

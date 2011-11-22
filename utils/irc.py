@@ -46,9 +46,10 @@ class Server(object):
             self.rooms[ room_name ] = None
     
     def idle(self, clear_cache=True):
+        
         if clear_cache:
             self.cache = []
-        readbuffer=readbuffer+self.sock.recv(1024)
+        readbuffer = self.sock.recv(1024)
         temp=string.split(readbuffer, "\n")
         readbuffer=temp.pop( )
 
@@ -58,6 +59,10 @@ class Server(object):
             self.cache.append(line)
             if(line[0]=="PING"):
                 self.sock.send("PONG %s\r\n" % line[1])
+            if(line[0] == "PRIVMSG"):
+                print "\n\n woo priv msg"
+                print line
+            
 
     def disconnect(self):
         
@@ -85,7 +90,7 @@ class Room(object):
 class Message(object):
     
     def __init__(self, content):
-        self.content
+        self.content = content
 
 if __name__ == '__main__':
     

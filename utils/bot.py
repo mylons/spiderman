@@ -5,6 +5,7 @@ import irc
 import tweepy
 import tweepy.cursor as cursor
 import random
+import time
 
 HOST="irc.enterthegame.com"
 PORT=6667
@@ -14,6 +15,8 @@ REALNAME="pureevil"
 INI="gsbot.ini"
 NAME_TO_BOT="GSElevator"
 class Bot(object):
+    
+    commands = [ "random" ]
     
     def __init__(self,
                  host=HOST,
@@ -31,7 +34,7 @@ class Bot(object):
         
     def message_room(self, room_name, message):
         msg = irc.Message(message)
-        self.server.message_room(room_name, message)
+        self.server.message_room(room_name, msg)
         
     def set_cache(self, cache):
         self.cache = cache
@@ -39,7 +42,30 @@ class Bot(object):
     def random_message(self, room_name):
         if len(self.cache) > 0:
             self.message_room( room_name, self.cache[ random.randrange(0, len(self.cache)) ] )
-
+    
+            
+    def random(self):
+        if len(self.cache) > 0:
+            return self.cache[ random.randrange(0, len(self.cache)) ]
+        else:
+            return "no messages.  cache not set"
+    
+    def idle(self):
+        
+        while True:
+            time.sleep(1)
+            if len(self.server.cache) > 0:
+                concat_cache = ''.join( self.server.cache[0] )
+                for command in self.commands:
+                    check_for = "!%s" % command
+                    if concat_cache.find( check_for ) > 0:
+                        self.message_room("poker", self.random())
+                        
+            self.server.idle()
+                        
+                        
+                
+    
 def grab_tweets(params):
     auth = tweepy.auth.OAuthHandler(params['oauth']['consumer_key'],
                                         params['oauth']['consumer_secret'])
@@ -47,7 +73,6 @@ def grab_tweets(params):
                           params['oauth']['access_token_secret'])
     
     api = tweepy.API(auth_handler=auth, secure=True, retry_count=3)
-    print api.me().name
     friends = api.friends_ids()
     user_id = 0
     for friend in friends[0]:
@@ -98,8 +123,13 @@ if __name__ == '__main__':
     print "got: ", len(tweets), " tweets"
     
     gs = Bot()
+    gs.set_cache( tweets )
     #gs.get_cache_tweets()
     gs.join_room("poker")
-    gs.message_room("poker", tweets[0])
+    gs.message_room("poker", "ahoy, donks")
+    
+    gs.idle()    
+        
+    
     gs.server.disconnect()
     

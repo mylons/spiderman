@@ -1,1 +1,11 @@
-touched..
+#bot.py help
+run like so
+python bot.py something.ini
+
+ini looks like:
+twitter.username=
+twitter.password=
+oauth.consumer_key=
+oauth.consumer_secret=
+oauth.access_token=
+oauth.access_token_secret=

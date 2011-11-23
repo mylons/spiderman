@@ -9,26 +9,32 @@ import time
 
 HOST="irc.enterthegame.com"
 PORT=6667
-NICK="goldman-sachs-elevator"
-IDENT="goldman-sachs-elevator"
+NICK="pokerbot"
+IDENT="pokerbot"
 REALNAME="pureevil"
 INI="gsbot.ini"
 NAME_TO_BOT="GSElevator"
+USER_TIMELINE_MAX=3200
 class Bot(object):
     
-    commands = [ "random" ]
-    
+    commands = [ "!tweet", "!rtweet" ]
+    followed_users = {}
     def __init__(self,
                  host=HOST,
                  port=PORT,
                  nick=NICK,
                  ident=IDENT,
-                 realname=REALNAME):
+                 realname=REALNAME,
+                 followed_users={}):
         self.user = irc.User(nick=nick, ident=ident, realname=realname)
+        import copy
+        self.followed_users = copy.deepcopy(followed_users)
         self.server = irc.Server(self.user, host=host, port=port)
         self.server.connect()
         
-    
+    def display_followed_users(self):
+        return ' '.join(self.cache.keys())
+        
     def join_room(self, room_name):
         self.server.join_room(room_name)
         
@@ -44,12 +50,52 @@ class Bot(object):
             self.message_room( room_name, self.cache[ random.randrange(0, len(self.cache)) ] )
     
             
-    def random(self):
+    def random(self, user_name):
         if len(self.cache) > 0:
-            return self.cache[ random.randrange(0, len(self.cache)) ]
+            return self.cache[ user_name ][ random.randrange(0, len(self.cache[ user_name ])) ]
         else:
             return "no messages.  cache not set"
+
+    def last_tweet(self, user_name):
+        if len(self.cache) > 0:
+            try:
+                return self.cache[ user_name ][ 0 ]
+            except:
+                return "poker bot isn't following that person.  try:" + self.display_followed_users()
+        
+    def get_word_after_command(self, command):
+        concat_cache = ' '.join( self.server.cache[0] )
+        index = concat_cache.find(command)
+        first_char = index+len(command)+1
+        first_char = concat_cache[first_char:].find(' ') + first_char + 1
+        last_char = concat_cache[first_char:].find(' ') - 1
+        if last_char <= 0:
+            last_char = len(concat_cache)
+        print concat_cache[first_char:last_char]
+        word = concat_cache[first_char:last_char]
+        print self.cache
+        print command
+        print concat_cache
+        print index
+        print first_char
+        print last_char
+        print word
+        return word
+        
+
     
+    def handle_command(self, command, room_name="poker"):
+        user_name = self.get_word_after_command(command)
+        
+        if command == "!tweet":
+            self.message_room(room_name,
+                              "@"+user_name + ": " + self.last_tweet(user_name))
+            
+        if command == "!rtweet":
+            self.message_room(room_name,
+                              "@"+user_name + ": " + self.random(user_name))
+    
+        
     def idle(self):
         
         while True:
@@ -57,9 +103,8 @@ class Bot(object):
             if len(self.server.cache) > 0:
                 concat_cache = ''.join( self.server.cache[0] )
                 for command in self.commands:
-                    check_for = "!%s" % command
-                    if concat_cache.find( check_for ) > 0:
-                        self.message_room("poker", self.random())
+                    if concat_cache.find( command ) > 0:
+                        self.handle_command(command)
                         
             self.server.idle()
                         
@@ -75,29 +120,31 @@ def grab_tweets(params):
     api = tweepy.API(auth_handler=auth, secure=True, retry_count=3)
     friends = api.friends_ids()
     user_id = 0
+    followed_users = {}
+    
     for friend in friends[0]:
         u = api.get_user(friend)
-        if str(u.screen_name).lower() == NAME_TO_BOT.lower():
-            user_id = friend
-            break
+        """
+        if str(u.screen_name).lower() != 'ctide':
+            continue
+        """ 
+        followed_users[ str(u.screen_name).lower() ] = friend
     
-    page_limit = 5000
+    #page_limit = 5000
     tweet_blocks = []
     total = 0
     
-    for i in xrange(page_limit):
-        tweet_blocks.append( api.user_timeline(id=user_id, page=i) )
-        tmp = total + len( tweet_blocks[-1] )
-        if tmp == total:
-            break
-        total = tmp
-        
-    text_list = []
-    for tweets in tweet_blocks:
+    tweets_by_user = {}
+    for followed in followed_users:
+        user_id = followed_users[ followed ] 
+        tweets = api.user_timeline(id=user_id, count=USER_TIMELINE_MAX)
+        total = total + len( tweets )
+        print "tweets for", followed, len(tweets)
+        tweets_by_user[followed] = []
         for tweet in tweets:
-            text_list.append( tweet.text )
-    
-    return text_list
+            tweets_by_user[followed].append( tweet.text )
+        
+    return tweets_by_user
         
 def parse_ini(ini):
     fp = open(ini, "r")
@@ -117,6 +164,7 @@ def parse_ini(ini):
     return params
 
 if __name__ == '__main__':
+    room_name = "poker"
     params = parse_ini(sys.argv[1])
     print "proecssing tweets"
     tweets = grab_tweets(params)
@@ -124,12 +172,8 @@ if __name__ == '__main__':
     
     gs = Bot()
     gs.set_cache( tweets )
-    #gs.get_cache_tweets()
-    gs.join_room("poker")
-    gs.message_room("poker", "ahoy, donks")
-    
+    gs.join_room(room_name)
+    gs.message_room(room_name, "sup, bros")
     gs.idle()    
-        
-    
     gs.server.disconnect()
     

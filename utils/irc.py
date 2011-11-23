@@ -57,11 +57,9 @@ class Server(object):
             line=string.rstrip(line)
             line=string.split(line)
             self.cache.append(line)
-            if(line[0]=="PING"):
-                self.sock.send("PONG %s\r\n" % line[1])
-            if(line[0] == "PRIVMSG"):
-                print "\n\n woo priv msg"
-                print line
+            if len(line) > 0:
+                if(line[0]=="PING"):
+                    self.sock.send("PONG %s\r\n" % line[1])
             
 
     def disconnect(self):

@@ -7,13 +7,13 @@ import tweepy.cursor as cursor
 import random
 import time
 
-HOST="irc.enterthegame.com"
+HOST=""
 PORT=6667
-NICK="pokerbot"
-IDENT="pokerbot"
+NICK=""
+IDENT="bot"
 REALNAME="pureevil"
 INI="gsbot.ini"
-NAME_TO_BOT="GSElevator"
+NAME_TO_BOT=""
 USER_TIMELINE_MAX=3200
 class Bot(object):
     
@@ -61,7 +61,7 @@ class Bot(object):
             try:
                 return self.cache[ user_name ][ 0 ]
             except:
-                return "poker bot isn't following that person.  try:" + self.display_followed_users()
+                return "bot isn't following that person.  try:" + self.display_followed_users()
         
     def get_word_after_command(self, command):
         concat_cache = ' '.join( self.server.cache[0] )
@@ -84,7 +84,7 @@ class Bot(object):
         
 
     
-    def handle_command(self, command, room_name="poker"):
+    def handle_command(self, command, room_name="3d"):
         user_name = self.get_word_after_command(command)
         
         if command == "!tweet":
@@ -164,7 +164,7 @@ def parse_ini(ini):
     return params
 
 if __name__ == '__main__':
-    room_name = "poker"
+    room_name = "3d"
     params = parse_ini(sys.argv[1])
     print "proecssing tweets"
     tweets = grab_tweets(params)
